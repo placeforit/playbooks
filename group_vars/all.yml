@@ -1,0 +1,12 @@
+---
+
+#SSH Configuration
+sshhost_config:
+- name: worker1
+  username: eatpie
+- name: worker2
+  username: eatpie
+- name: controlplane1
+  username: eatpie
+- name: controlplane2
+  username: eatpie

@@ -1,0 +1,5 @@
+---
+- name: configure ssh for user
+  hosts: local
+  roles:
+  - sshconfig

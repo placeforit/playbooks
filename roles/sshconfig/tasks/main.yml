@@ -1,0 +1,19 @@
+---
+- name: ensure ~/.ssh exists
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh"
+    mode: 0700
+    state: directory
+
+- name: add username into ssh config
+  blockinfile:
+    path: ~/.ssh/config
+    create: yes
+    mode: 0600
+    block: |-
+      # {mark} ssh username details (START)
+      {% for sshuser in sshhost_config %}
+      Host {{ sshuser.name }}
+        User {{ sshuser.username }}
+      {% endfor %}
+    marker: "# {mark} ssh username details"
