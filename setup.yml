@@ -1,7 +1,7 @@
 ---
 - name: k8s
   become: yes
-  hosts: k8s_controlplane
+  hosts: k8s
   roles:
   - k8s
 
