@@ -11,3 +11,6 @@ all:
 
 ssh:
 	 ${RUN_PLAYBOOK} ssh_config.yml
+
+install:
+	ansible-galaxy install -r ./roles/requirements.yml --force

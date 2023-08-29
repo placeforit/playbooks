@@ -9,3 +9,8 @@
     - "cgroup_enable=memory"
     notify:
       - Reboot host and wait for it to restart
+
+  - name: Install microk8s
+    community.general.snap:
+      name: microk8s
+      classic: true
