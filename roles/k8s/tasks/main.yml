@@ -7,4 +7,5 @@
     with_items:
     - "cgroup_memory=1"
     - "cgroup_enable=memory"
-
+    notify:
+      - Reboot host and wait for it to restart
