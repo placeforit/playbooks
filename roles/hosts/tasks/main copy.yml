@@ -1,0 +1,26 @@
+---
+  - name: Show host IPs
+    debug:
+      msg: "{{ ansible_ssh_host }}"
+
+  - name: Print Hostname and IP
+    debug:
+      msg: "Hostname: {{ inventory_hostname }}, IP Address: {{ hostvars[inventory_hostname]['ansible_host'] }}"
+
+  - name: Add Hostname and IP to /etc/hosts
+    lineinfile:
+      path: /etc/hosts
+      line: "{{ hostvars[inventory_hostname]['ansible_host'] }} {{ inventory_hostname }}"
+      state: present
+    delegate_to: localhost  # Perform the task on the Ansible control machine
+
+  - name: Verify /etc/hosts
+    command: cat /etc/hosts
+    register: etc_hosts_content
+    changed_when: false  # Mark task as unchanged regardless of output
+    delegate_to: localhost
+
+  - name: Display /etc/hosts
+    debug:
+      var: etc_hosts_content.stdout_lines
+

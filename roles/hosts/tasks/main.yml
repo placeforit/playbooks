@@ -1,0 +1,33 @@
+---
+  - name: Show host IPs (debug only)
+    debug:
+      msg: "{{ ansible_facts['default_ipv4']['address'] if 'default_ipv4' in ansible_facts else 'N/A' }}"
+    when: debug_mode
+
+  - name: Print Hostname and IP (debug only)
+    debug:
+      msg: "Hostname: {{ inventory_hostname }}, IP Address: {{ ansible_facts['default_ipv4']['address'] if 'default_ipv4' in ansible_facts else 'N/A' }}"
+    when: debug_mode
+
+  - name: Add all hostnames and IPs to /etc/hosts of each machine
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^.*\s{{ item }}$'  # match lines ending with the current hostname from the loop
+      line: "{{ (hostvars[item]['ansible_facts']['default_ipv4']['address'] if 'default_ipv4' in hostvars[item]['ansible_facts'] and hostvars[item]['ansible_facts']['default_ipv4']['address'] is defined else omit) }} {{ item }}"
+      insertafter: EOF
+      state: present
+    become: yes
+    loop: "{{ groups['all'] }}"
+    when: "'default_ipv4' in hostvars[item]['ansible_facts'] and hostvars[item]['ansible_facts']['default_ipv4']['address'] is defined"
+
+  - name: Verify /etc/hosts
+    command: cat /etc/hosts
+    register: etc_hosts_content
+    changed_when: false  # Mark task as unchanged regardless of output
+    when: debug_mode
+
+  - name: Display /etc/hosts (debug only)
+    debug:
+      var: etc_hosts_content.stdout_lines
+    when: debug_mode
+
