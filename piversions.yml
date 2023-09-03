@@ -1,0 +1,28 @@
+---
+- name: Raspberry Pi Details Playbook
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Check if model file exists
+      stat:
+        path: /sys/firmware/devicetree/base/model
+      register: model_file
+      ignore_errors: true
+
+    - name: "Check PI version"
+      shell: cat /sys/firmware/devicetree/base/model
+      register: model
+      when: model_file.stat.exists
+
+    - name: "Print PI version"
+      debug:
+        msg: "{{ model.stdout }}"
+      when: model_file.stat.exists
+
+    - name: Get memory details
+      command: free -m
+      register: memory
+
+    - name: Print memory details
+      debug:
+        msg: "{{ memory.stdout_lines }}"

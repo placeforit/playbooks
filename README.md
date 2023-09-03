@@ -16,3 +16,5 @@ This script downloads the playbooks in this repo and installs some dependancies
 
 [k8s_controlplane]
 controlplane1 ansible_host=192.168.x.x ansible_ssh_host=controlplane1 ansible_ssh_user=eatpie ansible_ssh_private_key_file=~/.ssh/id_rsa2
+
+
