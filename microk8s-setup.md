@@ -31,12 +31,12 @@ Begin on the first control plane node:
 
 - Add the user to the `microk8s` group to allow command execution without `sudo`:
    ```bash
-   sudo usermod -a -G microk8s eatpie
+   sudo usermod -a -G microk8s [username]
    ```
 
 - Ensure the `~/.kube` directory ownership is set to the user:
    ```bash
-   sudo chown -f -R eatpie ~/.kube
+   sudo chown -f -R [username] ~/.kube
    ```
 
 #### 2. Adding Nodes

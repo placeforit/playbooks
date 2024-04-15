@@ -1,16 +1,29 @@
 ---
-  - name: Enable container features
-    replace:
+  - name: Ensure container features are enabled
+    lineinfile:
       path: /boot/firmware/cmdline.txt
+      line: '\1 {{ item }}'
+      backrefs: yes
       regexp: '^([\w](?!.*\b{{ item }}\b).*)$'
-      replace: '\1 {{ item }}'
     with_items:
-    - "cgroup_memory=1"
-    - "cgroup_enable=memory"
-    notify:
-      - Reboot host and wait for it to restart
+      - "cgroup_memory=1"
+      - "cgroup_enable=memory"
+    register: container_features
+
+  - name: Reboot host and wait for it to restart
+    reboot:
+      msg: "Rebooting to apply container features"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 60
+      test_command: uptime
+    when: container_features.changed
+
 
   - name: Install microk8s
     community.general.snap:
       name: microk8s
+      state: present
       classic: true
+    notify: start microk8s

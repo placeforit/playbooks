@@ -1,5 +1,11 @@
 ---
 - name: configure ssh for user
-  hosts: local
+  hosts: localhost
+  vars_prompt:
+    - name: ssh_username
+      prompt: "Enter the SSH username"
+      private: no  # Set to 'yes' for sensitive information like passwords
+
   roles:
-  - sshconfig
+    - sshconfig
+

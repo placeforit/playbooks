@@ -15,6 +15,6 @@ This script downloads the playbooks in this repo and installs some dependancies
 ## inventory example for use with hosts playbook
 
 [k8s_controlplane]
-controlplane1 ansible_host=192.168.x.x ansible_ssh_host=controlplane1 ansible_ssh_user=eatpie ansible_ssh_private_key_file=~/.ssh/id_rsa2
+controlplane1 ansible_host=192.168.x.x ansible_ssh_host=controlplane1 ansible_ssh_user=[username] ansible_ssh_private_key_file=~/.ssh/id_rsa2
 
 
