@@ -1,7 +1,22 @@
 ---
-- name: k8s
-  become: yes
+- name: Setup Kubernetes with MicroK8s
   hosts: k8s
-  roles:
-  - k8s
+  become: yes
+  vars_prompt:
+    - name: ansible_user
+      prompt: "Enter the username that will be used for the setup"
+      private: no  # This should be 'no' as the username is not sensitive information
 
+  roles:
+    - k8s
+
+- name: Debugging Information
+  hosts: k8s
+  tasks:
+    - name: Print ansible group names
+      debug:
+        msg: "Group names for {{ inventory_hostname }} are: {{ group_names }}"
+
+    - name: Print specific variable
+      debug:
+        msg: "Debug mode is set to: {{ debug_mode }}"

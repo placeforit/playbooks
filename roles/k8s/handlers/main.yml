@@ -1,3 +1,4 @@
+---
 - name: Reboot host and wait for it to restart
   reboot:
     msg: "Reboot initiated by Ansible"
@@ -11,3 +12,7 @@
   become: yes
   command: microk8s start
 
+- name: initialize microk8s cluster
+  become: yes
+  command: "kubectl label nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane=''"
+  when: "'controlplane' in group_names"

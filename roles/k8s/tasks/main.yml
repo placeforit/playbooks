@@ -1,29 +1,106 @@
 ---
-  - name: Ensure container features are enabled
-    lineinfile:
-      path: /boot/firmware/cmdline.txt
-      line: '\1 {{ item }}'
-      backrefs: yes
-      regexp: '^([\w](?!.*\b{{ item }}\b).*)$'
-    with_items:
-      - "cgroup_memory=1"
-      - "cgroup_enable=memory"
-    register: container_features
+- name: Ensure container features are enabled
+  lineinfile:
+    path: /boot/firmware/cmdline.txt
+    line: '\1 {{ item }}'
+    backrefs: yes
+    regexp: '^([\w](?!.*\b{{ item }}\b).*)$'
+  with_items:
+    - "cgroup_memory=1"
+    - "cgroup_enable=memory"
+  register: container_features
 
-  - name: Reboot host and wait for it to restart
-    reboot:
-      msg: "Rebooting to apply container features"
-      connect_timeout: 5
-      reboot_timeout: 300
-      pre_reboot_delay: 0
-      post_reboot_delay: 60
-      test_command: uptime
-    when: container_features.changed
+- name: Reboot host and wait for it to restart
+  reboot:
+    msg: "Rebooting to apply container features"
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 60
+    test_command: uptime
+  when: container_features.changed
 
+- name: Install microk8s
+  community.general.snap:
+    name: microk8s
+    state: present
+    classic: true
+  notify:
+    - start microk8s
+    - initialize microk8s cluster
 
-  - name: Install microk8s
-    community.general.snap:
-      name: microk8s
-      state: present
-      classic: true
-    notify: start microk8s
+- name: Initialize MicroK8s on Control Plane Nodes
+  block:
+    - name: Start MicroK8s
+      command: microk8s start
+      when: "'controlplane' in group_names"
+
+    - name: Enable HA clustering
+      command: microk8s enable ha-cluster
+      when: "'controlplane' in group_names"
+
+    - name: Alias kubectl for ease of use
+      command: snap alias microk8s.kubectl kubectl
+      when: "'controlplane' in group_names"
+
+    - name: Add user to microk8s group
+      user:
+        name: "{{ ansible_user }}"
+        groups: microk8s
+        append: yes
+      when: "'k8s' in group_names"
+
+    - name: Ensure ~/.kube directory ownership
+      file:
+        path: "~/.kube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        recurse: yes
+      when: "'k8s' in group_names"
+
+    - name: Generate join command on the first control plane node
+      command: microk8s add-node
+      register: join_command_full
+      run_once: true
+      when: inventory_hostname == 'controlplane1' and "'k8s_controlplane' in group_names"
+
+    - name: Check if node is already a member of the cluster
+      shell: microk8s.kubectl get nodes --no-headers | grep -w {{ inventory_hostname }}
+      register: node_presence_check
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+      when: "'k8s_worker' in group_names"
+
+    - name: Execute join command on worker nodes
+      shell: "{{ join_command_full.stdout_lines[1] }}"
+      async: 120  # Run the command in the background for up to 120 seconds
+      poll: 10   # Check back every 10 seconds
+      when:
+        - inventory_hostname in groups['k8s_worker']
+        - node_presence_check.rc != 0
+
+    - name: Debug join command output
+      debug:
+        msg: "{{ join_command_full.stdout_lines }}"
+      when: inventory_hostname == 'controlplane1'
+
+    - name: Check if node joined successfully
+      shell: "microk8s kubectl get nodes | grep -q {{ inventory_hostname }}"
+      register: node_check
+      ignore_errors: true
+      when: "'k8s_worker' in group_names"
+
+    - name: Report join failure
+      debug:
+        msg: "Node {{ inventory_hostname }} failed to join the cluster. Please check the join token and network connectivity."
+      when:
+        - "'k8s_worker' in group_names"
+        - node_check is defined
+        - node_check.rc != 0
+      failed_when: node_check.rc != 0
+
+    - name: Debug node_check variable
+      debug:
+        var: node_check
+      when: node_check is defined
